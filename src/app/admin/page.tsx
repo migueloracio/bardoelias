@@ -107,7 +107,7 @@ export default function AdminPage() {
     setEditingItem({
       id: `custom_${Date.now()}`,
       name: "",
-      category: "petiscos",
+      category: "porcoes",
       description: "",
       price: 25.0,
       image: "/images/real/bar-iluminacao-noturna.jpg",
@@ -493,11 +493,11 @@ export default function AdminPage() {
                       onChange={(e) => setEditingItem({ ...editingItem, category: e.target.value as any })}
                       className="w-full px-4 py-2.5 rounded-xl bg-dark-950 border border-white/15 text-white text-xs focus:outline-none focus:border-amber-400"
                     >
-                      <option value="petiscos">Petiscos & Porções</option>
-                      <option value="pratos">Pratos Principais</option>
-                      <option value="drinks">Drinks & Coquetéis</option>
-                      <option value="cervejas">Chopps & Cervejas</option>
-                      <option value="sobremesas">Sobremesas</option>
+                      <option value="porcoes">Porções & Petiscos</option>
+                      <option value="pratos">Pratos, Risotos & Massas</option>
+                      <option value="destilados">Whiskies, Gins & Drinks</option>
+                      <option value="cervejas">Cervejas & Vinhos</option>
+                      <option value="bebidas">Não Alcoólicos</option>
                     </select>
                   </div>
 

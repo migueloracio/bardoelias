@@ -39,59 +39,90 @@ ALTER TABLE public.menu_categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.menu_items ENABLE ROW LEVEL SECURITY;
 
 -- 4. Políticas de Segurança (Leitura pública para o cardápio no site)
+DROP POLICY IF EXISTS "Permitir leitura pública de categorias" ON public.menu_categories;
 CREATE POLICY "Permitir leitura pública de categorias"
     ON public.menu_categories FOR SELECT
     USING (true);
 
+DROP POLICY IF EXISTS "Permitir leitura pública de pratos" ON public.menu_items;
 CREATE POLICY "Permitir leitura pública de pratos"
     ON public.menu_items FOR SELECT
     USING (true);
 
--- 5. Políticas para Inserção, Atualização e Deleção (Anon e Authenticated)
+-- 5. Políticas para Inserção, Atualização e Deleção
+DROP POLICY IF EXISTS "Permitir gestão de categorias" ON public.menu_categories;
 CREATE POLICY "Permitir gestão de categorias"
     ON public.menu_categories FOR ALL
     USING (true)
     WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Permitir gestão de pratos" ON public.menu_items;
 CREATE POLICY "Permitir gestão de pratos"
     ON public.menu_items FOR ALL
     USING (true)
     WITH CHECK (true);
 
--- 6. Inserir Categorias Iniciais
+-- 6. Inserir Categorias Oficiais
 INSERT INTO public.menu_categories (id, label, icon_name, description, order_index, is_active)
 VALUES
-    ('petiscos', 'Petiscos & Porções', 'Utensils', 'Para compartilhar no happy hour e celebrar com amigos', 1, true),
-    ('pratos', 'Pratos Principais', 'Beef', 'Almoços e jantares fartos preparados com amor', 2, true),
-    ('drinks', 'Drinks & Coquetéis', 'GlassWater', 'Coquetelaria autoral e clássicos atemporais', 3, true),
-    ('cervejas', 'Chopps & Cervejas', 'Beer', 'Rótulos artesanais e chopp servido no copo trincando', 4, true),
-    ('sobremesas', 'Sobremesas', 'CakeSlice', 'Finalize a sua experiência com doçura artesanal', 5, true)
-ON CONFLICT (id) DO NOTHING;
+    ('porcoes', 'Porções & Petiscos', 'Utensils', 'Porções generosas para compartilhar com os amigos', 1, true),
+    ('pratos', 'Pratos, Risotos & Massas', 'Beef', 'Refeições saborosas preparadas na hora com carinho', 2, true),
+    ('destilados', 'Whiskies, Gins & Drinks', 'GlassWater', 'Copões de whisky premium, taças de gin e caipirinhas', 3, true),
+    ('cervejas', 'Cervejas & Vinhos', 'Beer', 'Cervejas trincando, long necks e garrafas de vinho', 4, true),
+    ('bebidas', 'Não Alcoólicos', 'CakeSlice', 'Refrigerantes, sucos naturais e água mineral', 5, true)
+ON CONFLICT (id) DO UPDATE SET
+    label = EXCLUDED.label,
+    description = EXCLUDED.description,
+    order_index = EXCLUDED.order_index;
 
--- 7. Inserir Pratos Iniciais
+-- 7. Inserir Itens do Cardápio Real do Bar do Elias
 INSERT INTO public.menu_items (id, name, category, description, price, image, is_available, is_best_seller, is_chef_special, tags, serves, order_index)
 VALUES
-    ('p1', 'Bolinho de Costela com Provolone', 'petiscos', '6 unidades de bolinho crocante recheado com costela desfiada cozida por 12h e queijo provolone derretido. Acompanha maionese de alho negro.', 46.90, 'https://images.unsplash.com/photo-1541544741938-0af808871cc0?auto=format&fit=crop&w=800&q=80', true, true, true, ARRAY['Artesanal', 'Mais Pedido'], '2 a 3 pessoas', 1),
-    ('p2', 'Torresmo de Rolo Crocante do Elias', 'petiscos', 'Panceta enrolada e pururucada lentamente na brasa, servida em fatias crocantes com geleia de pimenta defumada e fatias de limão siciliano.', 52.00, 'https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?auto=format&fit=crop&w=800&q=80', true, false, true, ARRAY['Especialidade', 'Crocante'], '2 a 3 pessoas', 2),
-    ('p3', 'Dadinhos de Tapioca com Queijo Coalho', 'petiscos', 'Crocantes por fora, macios por dentro. Acompanhados de melaço de cana infusionado com gengibre e pimenta dedo-de-moça.', 38.50, 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=800&q=80', true, true, false, ARRAY['Vegetariano', 'Sem Glúten'], '2 pessoas', 3),
-    ('p4', 'Frango a Passarinho Crocante com Alho Frito', 'petiscos', 'Cortes selecionados de frango marinados em ervas e especiarias, empanados e cobertos com generosa camada de alho dourado e salsinha fresca.', 44.00, 'https://images.unsplash.com/photo-1562967914-608f82629710?auto=format&fit=crop&w=800&q=80', true, false, false, ARRAY['Clássico de Boteco'], '2 a 3 pessoas', 4),
-    ('p5', 'Picanha na Chapa com Mandioca na Manteiga', 'petiscos', 'Tiras suculentas de picanha nobre grelhadas na chapa com cebola caramelizada, acompanhadas de mandioca frita na manteiga de garrafa e farofa crocante.', 89.90, 'https://images.unsplash.com/photo-1558030006-450675393462?auto=format&fit=crop&w=800&q=80', true, true, false, ARRAY['Premium', 'Farto'], '3 a 4 pessoas', 5),
-    ('p6', 'Pastéis Sortidos do Elias (8 un)', 'petiscos', 'Massa fininha e super crocante recheada com carne seca com catupiry, queijo meia cura com orégano e palmito cremoso.', 42.00, 'https://images.unsplash.com/photo-1628840042765-356cda07504e?auto=format&fit=crop&w=800&q=80', true, false, false, ARRAY['Tradicional'], '2 pessoas', 6),
-    ('m1', 'Parmegiana da Casa com Arroz e Fritas', 'pratos', 'Filé mignon empanado artesanalmente, coberto com molho de tomate rústico da casa e queijo muçarela gratinado. Acompanha arroz branco e batatas fritas crocantes.', 78.90, 'https://images.unsplash.com/photo-1600891964092-4316c288032e?auto=format&fit=crop&w=800&q=80', true, true, false, ARRAY['Individual Generoso', 'Favorito'], '1 a 2 pessoas', 7),
-    ('m2', 'Baião de Dois Sertanejo do Elias', 'pratos', 'Feijão fradinho, arroz, carne de sol desfiada, queijo coalho tostado, bacon crocante, linguiça artesanal e toque de coentro fresco.', 68.00, 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80', true, false, true, ARRAY['Prato Típico', 'Sabor Raiz'], '2 pessoas', 8),
-    ('m3', 'Risoto de Costela com Agrião e Parmesão', 'pratos', 'Arroz arbóreo cremoso enriquecido com redução de vinho tinto, costela bovina desfiada no ponto perfeito e folhas de agrião fresco.', 64.90, 'https://images.unsplash.com/photo-1633964913295-ceb43826e7c9?auto=format&fit=crop&w=800&q=80', true, false, false, ARRAY['Gourmet'], '1 pessoa', 9),
-    ('d1', 'Caipirinha Imperial do Elias', 'drinks', 'Cachaça artesanal envelhecida em barril de amburana, limão tahiti, limão siciliano, rapadura ralada e ramo de hortelã fresca.', 29.90, 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=800&q=80', true, true, true, ARRAY['Autoral', 'Mais Pedido'], NULL, 10),
-    ('d2', 'Gin Tônica Tropical Botanic', 'drinks', 'Gin premium infusionado com zimbro, água tônica artesanal, fatias de maracujá, alecrim fresco e toque cítrico de toranja.', 34.00, 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=800&q=80', true, true, false, ARRAY['Refrescante', 'Instagramável'], NULL, 11),
-    ('d3', 'Smoky Old Fashioned', 'drinks', 'Bourbon Whiskey americano, bitter aromático de laranja, xarope de açúcar demerara e finalização com defumação de canela em pau na mesa.', 38.00, 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=800&q=80', true, false, true, ARRAY['Clássico Sofisticado'], NULL, 12),
-    ('d4', 'Moscow Mule da Boemia', 'drinks', 'Vodka selecionada, suco de limão fresco, xarope artesanal de gengibre e espuma cremosa de gengibre com raspas de limão tahiti na caneca de cobre.', 32.00, 'https://images.unsplash.com/photo-1536935338788-846bb9981813?auto=format&fit=crop&w=800&q=80', true, true, false, ARRAY['Popular'], NULL, 13),
-    ('c1', 'Chopp Pilsen Puro Malte (500ml)', 'cervejas', 'Chopp extremamente fresco, colarinho cremoso aveludado e temperatura de -2°C no copo previamente ultracongelado.', 11.90, 'https://images.unsplash.com/photo-1608270119864-1678121a8d05?auto=format&fit=crop&w=800&q=80', true, true, false, ARRAY['Super Gelado', 'Mais Vendido'], NULL, 14),
-    ('c2', 'Chopp IPA Artesanal (500ml)', 'cervejas', 'Notas cítricas marcantes de lúpulos americanos, amargor equilibrado e corpo dourado aveludado.', 18.90, 'https://images.unsplash.com/photo-1571613316887-6f8d5cbf7ef7?auto=format&fit=crop&w=800&q=80', true, false, false, ARRAY['Artesanal', 'Amargor Intenso'], NULL, 15),
-    ('c3', 'Cervejas Especiais Garrafa (600ml)', 'cervejas', 'Opções selecionadas: Heineken, Stella Artois, Original, Spaten e Corona.', 17.50, 'https://images.unsplash.com/photo-1567696911980-2eed69a46042?auto=format&fit=crop&w=800&q=80', true, false, false, ARRAY['Garrafa 600ml'], NULL, 16),
-    ('s1', 'Pudim de Leite Condensado do Elias', 'sobremesas', 'Pudim lisinho e cremoso, sem furinhos, finalizado com calda aveludada de caramelo, café expresso e notas sutis de cachaça envelhecida.', 22.00, 'https://images.unsplash.com/photo-1587314168485-3236d6710814?auto=format&fit=crop&w=800&q=80', true, true, true, ARRAY['Autoral', 'Incrível'], NULL, 17),
-    ('s2', 'Churros Artesanais com Doce de Leite Viçosa', 'sobremesas', 'Palitos crocantes de churros passados no açúcar com canela, acompanhados de generoso pote de doce de leite cremoso de Minas Gerais.', 24.50, 'https://images.unsplash.com/photo-1599785209707-a456fc1337bb?auto=format&fit=crop&w=800&q=80', true, true, false, ARRAY['Sobremesa Quente'], NULL, 18)
+    -- PORÇÕES
+    ('porcao-peixe', 'Porção de Peixe Empanado', 'porcoes', 'Tiras crocantes e sequinhas de peixe empanado na farinha especial, servidas com fatias de limão e molho tártaro da casa.', 60.00, 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80', true, true, false, ARRAY['Mais Pedido', 'Crocante'], '2 a 3 pessoas', 1),
+    ('porcao-carne-fritas', 'Porção de Carne com Fritas', 'porcoes', 'Iscas suculentas de carne acebolada na chapa bem quente, acompanhadas de uma generosa porção de batatas fritas douradas.', 50.00, 'https://images.unsplash.com/photo-1558030006-450675393462?auto=format&fit=crop&w=800&q=80', true, true, false, ARRAY['Clássico', 'Farto'], '2 a 3 pessoas', 2),
+    ('file-fritas', 'Filé com Fritas', 'porcoes', 'Tiras de filé grelhadas no ponto perfeito com cebola dourada e batatas fritas super crocantes.', 35.00, 'https://images.unsplash.com/photo-1600891964092-4316c288032e?auto=format&fit=crop&w=800&q=80', true, false, false, ARRAY['Individual / Dupla'], '1 a 2 pessoas', 3),
+    ('porcao-salgados', 'Porção de Salgados Sortidos', 'porcoes', 'Mix de mini salgadinhos fritos na hora (coxinhas, kibe e bolinhas de queijo) crocantes e quentinhos.', 25.00, 'https://images.unsplash.com/photo-1541544741938-0af808871cc0?auto=format&fit=crop&w=800&q=80', true, false, false, ARRAY['Happy Hour'], '2 pessoas', 4),
+    ('porcao-batata', 'Porção de Batata Frita', 'porcoes', 'Batatas palito crocantes por fora, macias por dentro, temperadas com sal fino da casa.', 25.00, 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&w=800&q=80', true, false, false, ARRAY['Tradicional'], '2 a 3 pessoas', 5),
+
+    -- PRATOS, RISOTOS & MASSAS
+    ('risoto-salmao-camarao', 'Risoto de Salmão com Camarão', 'pratos', 'Arroz arbóreo cremoso com lascas de salmão fresco, camarões selecionados salteados na manteiga e finalizado com ervas finas e queijo parmesão.', 45.00, 'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?auto=format&fit=crop&w=800&q=80', true, true, true, ARRAY['Especialidade', 'Gourmet'], '1 a 2 pessoas', 6),
+    ('risoto-carne-seca-coalho', 'Risoto de Carne Seca com Queijo Coalho', 'pratos', 'Cremoso risoto brasileiro preparado com carne seca desfiada e dessalgada artesanalmente, cubos de queijo coalho dourados e toque de manteiga de garrafa.', 40.00, 'https://images.unsplash.com/photo-1633964913295-ceb43826e7c9?auto=format&fit=crop&w=800&q=80', true, false, true, ARRAY['Sabor Raiz', 'Chef Elias'], '1 a 2 pessoas', 7),
+    ('massa-camarao-bacon', 'Massa com Camarão e Bacon', 'pratos', 'Massa al dente envolvida em molho cremoso artesanal, camarões salteados e pedaços crocantes de bacon defumado.', 40.00, 'https://images.unsplash.com/photo-1555949258-eb67b1ef0ceb?auto=format&fit=crop&w=800&q=80', true, false, false, ARRAY['Massa Artesanal'], '1 pessoa', 8),
+    ('beef-bourguignon', 'Beef Bourguignon (Picadinho Especial)', 'pratos', 'Cortes nobres de carne bovina cozidos lentamente em molho encorpado com vinho tinto, cenoura e especiarias aromáticas.', 40.00, 'https://images.unsplash.com/photo-1547496502-affa22d38842?auto=format&fit=crop&w=800&q=80', true, false, true, ARRAY['Clássico Francês'], '1 pessoa', 9),
+    ('parmegiana', 'Parmegiana da Casa', 'pratos', 'Filé empanado crocante, coberto com molho de tomate rústico artesanal e queijo muçarela gratinado.', 40.00, 'https://images.unsplash.com/photo-1600891964092-4316c288032e?auto=format&fit=crop&w=800&q=80', true, true, false, ARRAY['Favorito'], '1 a 2 pessoas', 10),
+    ('panqueca', 'Panqueca Artesanal', 'pratos', 'Massa fininha e leve recheada com recheio farto e coberta com molho quente da casa e parmesão ralado.', 20.00, 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?auto=format&fit=crop&w=800&q=80', true, false, false, ARRAY['Tradicional'], '1 pessoa', 11),
+
+    -- DESTILADOS, WHISKIES & DRINKS
+    ('dose-copao-buchanans', 'Dose Copão Buchanan''s', 'destilados', 'Dose generosa de whisky Buchanan''s 12 anos no copão com gelo de coco ou gelo saborizado e energético à sua escolha.', 60.00, 'https://images.unsplash.com/photo-1527281400683-1aae777175f8?auto=format&fit=crop&w=800&q=80', true, true, false, ARRAY['Whisky 12 Anos', 'Mais Pedido'], NULL, 12),
+    ('dose-copao-black', 'Dose Copão Johnnie Walker Black Label', 'destilados', 'Whisky escocês Johnnie Walker Black Label 12 anos servido no copão com gelo e energético.', 60.00, 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=800&q=80', true, false, false, ARRAY['Black Label 12 Anos'], NULL, 13),
+    ('dose-copao-jack', 'Dose Copão Jack Daniel''s', 'destilados', 'Autêntico Tennessee Whiskey Jack Daniel''s No. 7 servido no copão com gelo e energético.', 50.00, 'https://images.unsplash.com/photo-1563227812-0ea4c22e6cc8?auto=format&fit=crop&w=800&q=80', true, true, false, ARRAY['Jack Daniel''s'], NULL, 14),
+    ('dose-chivas', 'Dose Chivas Regal 12 Anos', 'destilados', 'Dose de whisky Chivas Regal 12 anos, suave e aveludado no copo com pedras de gelo cristalino.', 50.00, 'https://images.unsplash.com/photo-1582819509237-d5b75f20ff7a?auto=format&fit=crop&w=800&q=80', true, false, false, ARRAY['Whisky Escocês'], NULL, 15),
+    ('dose-cavalo', 'Dose Cavalo Branco (White Horse)', 'destilados', 'Dose clássica de whisky White Horse com gelo.', 45.00, 'https://images.unsplash.com/photo-1527281400683-1aae777175f8?auto=format&fit=crop&w=800&q=80', true, false, false, ARRAY['White Horse'], NULL, 16),
+    ('taca-gin-tanqueray', 'Taça Gin Tanqueray', 'destilados', 'Gin importado Tanqueray servido em taça balloon com água tônica, especiarias e frutas cítricas.', 45.00, 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=800&q=80', true, true, false, ARRAY['Tanqueray', 'Premium'], NULL, 17),
+    ('taca-gin-beefeater', 'Taça Gin Beefeater', 'destilados', 'Gin londrino clássico Beefeater com tônica, zimbro e fatia de limão siciliano na taça de cristal.', 40.00, 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=800&q=80', true, false, false, ARRAY['Beefeater'], NULL, 18),
+    ('caipirinha-vodka-smirnoff', 'Caipirinha de Vodka Smirnoff (Caipiroska)', 'destilados', 'Vodka Smirnoff triplamente destilada com limão fresco macerado e açúcar na medida certa.', 25.00, 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=800&q=80', true, true, false, ARRAY['Smirnoff', 'Refrescante'], NULL, 19),
+    ('caipirinha-cachaca-velho', 'Caipirinha Tradicional de Cachaça (Velho Barreiro / 51)', 'destilados', 'A autêntica caipirinha brasileira feita com cachaça selecionada, muito limão e gelo triturado.', 20.00, 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=800&q=80', true, false, false, ARRAY['Clássica'], NULL, 20),
+
+    -- CERVEJAS & VINHOS
+    ('heineken', 'Heineken Long Neck', 'cervejas', 'Cerveja puro malte holandesa servida extremamente gelada na garrafa long neck (330ml).', 12.00, 'https://images.unsplash.com/photo-1608270119864-1678121a8d05?auto=format&fit=crop&w=800&q=80', true, true, false, ARRAY['Puro Malte', 'Super Gelada'], NULL, 21),
+    ('heineken-zero', 'Heineken 0.0% Álcool', 'cervejas', 'O sabor autêntico de Heineken com zero álcool na garrafa long neck.', 12.00, 'https://images.unsplash.com/photo-1608270119864-1678121a8d05?auto=format&fit=crop&w=800&q=80', true, false, false, ARRAY['Zero Álcool'], NULL, 22),
+    ('corona', 'Corona Extra', 'cervejas', 'Cerveja mexicana leve e refrescante, servida com uma rodela de limão no gargalo.', 12.00, 'https://images.unsplash.com/photo-1567696911980-2eed69a46042?auto=format&fit=crop&w=800&q=80', true, false, false, ARRAY['Long Neck'], NULL, 23),
+    ('skol-beats', 'Skol Beats', 'cervejas', 'Bebida mista alcoólica pronta para beber, moderna e refrescante (long neck / lata).', 12.00, 'https://images.unsplash.com/photo-1536935338788-846bb9981813?auto=format&fit=crop&w=800&q=80', true, false, false, ARRAY['Beats'], NULL, 24),
+    ('smirnoff-ice', 'Smirnoff Ice', 'cervejas', 'Bebida sabor limão à base de vodka Smirnoff, doce e super refrescante.', 15.00, 'https://images.unsplash.com/photo-1536935338788-846bb9981813?auto=format&fit=crop&w=800&q=80', true, false, false, ARRAY['Ice'], NULL, 25),
+    ('cerveja-original', 'Cerveja Original', 'cervejas', 'Cerveja pilsen tradicional brasileira, servida trincando de gelada.', 8.00, 'https://images.unsplash.com/photo-1571613316887-6f8d5cbf7ef7?auto=format&fit=crop&w=800&q=80', true, false, false, ARRAY['Trincando'], NULL, 26),
+    ('vinho-tinto-seco', 'Garrafa de Vinho Tinto Seco', 'cervejas', 'Garrafa de vinho tinto seco selecionado, corpo equilibrado e aroma marcante.', 60.00, 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?auto=format&fit=crop&w=800&q=80', true, false, false, ARRAY['Vinho Tinto', 'Garrafa'], NULL, 27),
+    ('vinho-tinto-suave', 'Garrafa de Vinho Tinto Suave', 'cervejas', 'Garrafa de vinho tinto de mesa suave, aveludado e adocicado no paladar.', 45.00, 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?auto=format&fit=crop&w=800&q=80', true, false, false, ARRAY['Vinho Suave', 'Garrafa'], NULL, 28),
+
+    -- NÃO ALCOÓLICOS
+    ('coca-cola-lata', 'Coca-Cola (Lata 350ml)', 'bebidas', 'Coca-Cola geladinha servida no copo com gelo e fatia de limão.', 8.00, 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&w=800&q=80', true, false, false, ARRAY['Lata 350ml'], NULL, 29),
+    ('guarana-lata', 'Guaraná Antarctica (Lata 350ml)', 'bebidas', 'Refrigerante de guaraná servido no copo com pedras de gelo.', 8.00, 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&w=800&q=80', true, false, false, ARRAY['Lata 350ml'], NULL, 30),
+    ('suco-laranja', 'Suco Natural de Laranja (Copo 300ml)', 'bebidas', 'Suco 100% natural de laranja espremido na hora, fresco e saboroso.', 8.00, 'https://images.unsplash.com/photo-1613478223719-2ab802602423?auto=format&fit=crop&w=800&q=80', true, false, false, ARRAY['Natural', '300ml'], NULL, 31),
+    ('agua-mineral', 'Água Mineral (500ml)', 'bebidas', 'Garrafinha de água mineral sem gás / com gás.', 5.00, 'https://images.unsplash.com/photo-1548839140-29a749e1bc4e?auto=format&fit=crop&w=800&q=80', true, false, false, ARRAY['Sem Gás / Com Gás'], NULL, 32)
 ON CONFLICT (id) DO UPDATE SET
     price = EXCLUDED.price,
     name = EXCLUDED.name,
+    category = EXCLUDED.category,
     description = EXCLUDED.description,
     image = EXCLUDED.image,
     is_available = EXCLUDED.is_available,
