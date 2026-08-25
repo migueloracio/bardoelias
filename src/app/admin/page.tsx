@@ -21,7 +21,11 @@ import {
   Search,
   CheckCircle2,
   RefreshCw,
-  Power
+  Power,
+  Upload,
+  Camera,
+  ImageIcon,
+  Link2
 } from "lucide-react";
 import { MenuItem, MENU_CATEGORIES } from "@/data/menuData";
 import { formatCurrency } from "@/lib/utils";
@@ -30,7 +34,8 @@ import {
   saveLiveMenuItem, 
   deleteLiveMenuItem, 
   toggleLiveItemAvailability, 
-  updateLiveItemPrice 
+  updateLiveItemPrice,
+  uploadMenuImage 
 } from "@/lib/menuService";
 import { isSupabaseConfigured } from "@/lib/supabase";
 
@@ -48,6 +53,8 @@ export default function AdminPage() {
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [saveSuccessMessage, setSaveSuccessMessage] = useState("");
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [imageUploadMode, setImageUploadMode] = useState<"file" | "url">("file");
 
   // Check login from session
   useEffect(() => {
@@ -117,13 +124,30 @@ export default function AdminPage() {
       tags: [],
       serves: "",
     });
+    setImageUploadMode("file");
     setIsModalOpen(true);
   };
 
   // Open Modal for Edit
   const handleOpenEditModal = (item: MenuItem) => {
     setEditingItem({ ...item });
+    setImageUploadMode(item.image.startsWith("http") || item.image.startsWith("/") ? "file" : "url");
     setIsModalOpen(true);
+  };
+
+  // Image Upload Handler
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !editingItem) return;
+
+    setUploadingImage(true);
+    const result = await uploadMenuImage(file);
+    if (result.success && result.url) {
+      setEditingItem((prev) => (prev ? { ...prev, image: result.url! } : null));
+    } else {
+      alert("Não foi possível carregar a imagem. Tente novamente ou use um link.");
+    }
+    setUploadingImage(false);
   };
 
   // Save Modal Item
@@ -180,7 +204,7 @@ export default function AdminPage() {
                 Painel Administrativo
               </h1>
               <p className="text-xs text-zinc-400 mt-1">
-                Gestão do cardápio, preços e disponibilidade em tempo real
+                Gestão do cardápio, fotos, preços e disponibilidade em tempo real
               </p>
             </div>
 
@@ -358,6 +382,7 @@ export default function AdminPage() {
                       src={item.image}
                       alt={item.name}
                       fill
+                      unoptimized
                       className="object-cover"
                     />
                   </div>
@@ -429,7 +454,7 @@ export default function AdminPage() {
                   <div className="flex items-center gap-1.5">
                     <button
                       onClick={() => handleOpenEditModal(item)}
-                      title="Editar detalhes completos"
+                      title="Editar detalhes e foto"
                       className="p-2 rounded-xl bg-white/5 hover:bg-amber-400/10 text-zinc-300 hover:text-amber-400 border border-white/10 transition-colors"
                     >
                       <Edit3 className="w-4 h-4" />
@@ -469,6 +494,93 @@ export default function AdminPage() {
               </div>
 
               <form onSubmit={handleSaveModal} className="space-y-4">
+                {/* Image Upload Box */}
+                <div>
+                  <label className="block text-xs font-semibold text-zinc-300 mb-2 flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <Camera className="w-3.5 h-3.5 text-amber-400" />
+                      Foto do Prato / Bebida
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setImageUploadMode("file")}
+                        className={`text-[10px] px-2 py-0.5 rounded-md ${
+                          imageUploadMode === "file" ? "bg-amber-500 text-dark-950 font-bold" : "text-zinc-400"
+                        }`}
+                      >
+                        Enviar Arquivo
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setImageUploadMode("url")}
+                        className={`text-[10px] px-2 py-0.5 rounded-md ${
+                          imageUploadMode === "url" ? "bg-amber-500 text-dark-950 font-bold" : "text-zinc-400"
+                        }`}
+                      >
+                        Colar Link / URL
+                      </button>
+                    </div>
+                  </label>
+
+                  <div className="flex items-center gap-4 p-3 rounded-2xl bg-dark-950 border border-white/10">
+                    <div className="relative w-20 h-20 rounded-xl overflow-hidden bg-dark-900 border border-white/10 flex-shrink-0">
+                      {editingItem.image ? (
+                        <Image
+                          src={editingItem.image}
+                          alt="Preview da foto"
+                          fill
+                          unoptimized
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-zinc-600">
+                          <ImageIcon className="w-6 h-6" />
+                        </div>
+                      )}
+                      {uploadingImage && (
+                        <div className="absolute inset-0 bg-dark-950/80 flex items-center justify-center">
+                          <RefreshCw className="w-5 h-5 text-amber-400 animate-spin" />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex-1 space-y-2">
+                      {imageUploadMode === "file" ? (
+                        <div>
+                          <label className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-amber-400/20 border border-white/15 hover:border-amber-400/50 text-white text-xs font-semibold cursor-pointer transition-colors">
+                            <Upload className="w-4 h-4 text-amber-400" />
+                            <span>{uploadingImage ? "Enviando..." : "Escolher foto do celular / PC"}</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={handleFileUpload}
+                              disabled={uploadingImage}
+                            />
+                          </label>
+                          <p className="text-[10px] text-zinc-500 mt-1">
+                            Formatos aceitos: JPG, PNG, WEBP (qualquer tamanho).
+                          </p>
+                        </div>
+                      ) : (
+                        <div>
+                          <input
+                            type="text"
+                            placeholder="https://... link de qualquer site"
+                            value={editingItem.image}
+                            onChange={(e) => setEditingItem({ ...editingItem, image: e.target.value })}
+                            className="w-full px-3 py-2 rounded-xl bg-dark-900 border border-white/15 text-white text-xs focus:outline-none focus:border-amber-400"
+                          />
+                          <p className="text-[10px] text-zinc-500 mt-1">
+                            Você pode colar qualquer link de imagem da internet.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-xs font-semibold text-zinc-300 mb-1">
                     Nome do Prato / Bebida *
@@ -545,41 +657,28 @@ export default function AdminPage() {
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-semibold text-zinc-300 mb-1">
-                      URL da Foto
+                  {/* Badges Toggle */}
+                  <div className="flex items-center gap-4 pt-4">
+                    <label className="flex items-center gap-2 cursor-pointer text-xs text-zinc-300">
+                      <input
+                        type="checkbox"
+                        checked={editingItem.isBestSeller}
+                        onChange={(e) => setEditingItem({ ...editingItem, isBestSeller: e.target.checked })}
+                        className="rounded border-zinc-700 text-amber-500 focus:ring-0"
+                      />
+                      <span>Mais Pedido</span>
                     </label>
-                    <input
-                      type="text"
-                      placeholder="/images/real/... ou link"
-                      value={editingItem.image}
-                      onChange={(e) => setEditingItem({ ...editingItem, image: e.target.value })}
-                      className="w-full px-4 py-2.5 rounded-xl bg-dark-950 border border-white/15 text-white text-xs focus:outline-none focus:border-amber-400"
-                    />
+
+                    <label className="flex items-center gap-2 cursor-pointer text-xs text-zinc-300">
+                      <input
+                        type="checkbox"
+                        checked={editingItem.isChefSpecial}
+                        onChange={(e) => setEditingItem({ ...editingItem, isChefSpecial: e.target.checked })}
+                        className="rounded border-zinc-700 text-red-500 focus:ring-0"
+                      />
+                      <span>Chef Elias</span>
+                    </label>
                   </div>
-                </div>
-
-                {/* Badges Toggle */}
-                <div className="flex items-center gap-6 pt-2">
-                  <label className="flex items-center gap-2 cursor-pointer text-xs text-zinc-300">
-                    <input
-                      type="checkbox"
-                      checked={editingItem.isBestSeller}
-                      onChange={(e) => setEditingItem({ ...editingItem, isBestSeller: e.target.checked })}
-                      className="rounded border-zinc-700 text-amber-500 focus:ring-0"
-                    />
-                    <span>Selo "Mais Pedido"</span>
-                  </label>
-
-                  <label className="flex items-center gap-2 cursor-pointer text-xs text-zinc-300">
-                    <input
-                      type="checkbox"
-                      checked={editingItem.isChefSpecial}
-                      onChange={(e) => setEditingItem({ ...editingItem, isChefSpecial: e.target.checked })}
-                      className="rounded border-zinc-700 text-red-500 focus:ring-0"
-                    />
-                    <span>Selo "Chef Elias"</span>
-                  </label>
                 </div>
 
                 <div className="pt-4 flex items-center justify-end gap-3 border-t border-white/10">

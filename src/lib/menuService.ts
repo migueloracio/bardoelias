@@ -160,3 +160,48 @@ export async function updateLiveItemPrice(id: string, newPrice: number): Promise
   }
   return false;
 }
+
+// Upload de Fotos para o Supabase Storage com Fallback Base64
+export async function uploadMenuImage(file: File): Promise<{ success: boolean; url?: string; error?: string }> {
+  const fileExt = file.name.split(".").pop()?.toLowerCase() || "jpg";
+  const fileName = `dish_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
+  const filePath = `${fileName}`;
+
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { data, error } = await supabase.storage
+        .from("menu-images")
+        .upload(filePath, file, {
+          cacheControl: "3600",
+          upsert: true,
+        });
+
+      if (error) {
+        console.warn("Aviso ao fazer upload no Supabase Storage:", error.message);
+        // Tenta fallback para Data URL Base64
+      } else {
+        const { data: publicData } = supabase.storage
+          .from("menu-images")
+          .getPublicUrl(filePath);
+
+        if (publicData?.publicUrl) {
+          return { success: true, url: publicData.publicUrl };
+        }
+      }
+    } catch (err: any) {
+      console.warn("Erro no Storage:", err.message);
+    }
+  }
+
+  // Fallback: Leitura local como DataURL (Base64)
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      resolve({ success: true, url: reader.result as string });
+    };
+    reader.onerror = () => {
+      resolve({ success: false, error: "Falha ao ler arquivo de imagem local" });
+    };
+    reader.readAsDataURL(file);
+  });
+}

@@ -27,9 +27,10 @@ export function DishCard({ item }: DishCardProps) {
         {/* Image Container with Badges */}
         <div className="relative aspect-[16/10] w-full rounded-2xl overflow-hidden mb-4 bg-dark-900">
           <Image
-            src={item.image}
+            src={item.image || "/images/real/bar-iluminacao-noturna.jpg"}
             alt={item.name}
             fill
+            unoptimized
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             className={`object-cover transition-transform duration-700 ease-fluid ${
               isAvailable ? "group-hover:scale-105" : "grayscale contrast-125"

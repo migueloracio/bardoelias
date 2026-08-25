@@ -127,3 +127,29 @@ ON CONFLICT (id) DO UPDATE SET
     image = EXCLUDED.image,
     is_available = EXCLUDED.is_available,
     updated_at = now();
+
+-- 8. Criar Bucket de Armazenamento para Fotos (Supabase Storage)
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('menu-images', 'menu-images', true)
+ON CONFLICT (id) DO UPDATE SET public = true;
+
+-- Políticas de Storage (Upload e Leitura pública de fotos)
+DROP POLICY IF EXISTS "Leitura pública de fotos do cardápio" ON storage.objects;
+CREATE POLICY "Leitura pública de fotos do cardápio"
+    ON storage.objects FOR SELECT
+    USING (bucket_id = 'menu-images');
+
+DROP POLICY IF EXISTS "Upload público de fotos do cardápio" ON storage.objects;
+CREATE POLICY "Upload público de fotos do cardápio"
+    ON storage.objects FOR INSERT
+    WITH CHECK (bucket_id = 'menu-images');
+
+DROP POLICY IF EXISTS "Atualização pública de fotos do cardápio" ON storage.objects;
+CREATE POLICY "Atualização pública de fotos do cardápio"
+    ON storage.objects FOR UPDATE
+    USING (bucket_id = 'menu-images');
+
+DROP POLICY IF EXISTS "Deleção pública de fotos do cardápio" ON storage.objects;
+CREATE POLICY "Deleção pública de fotos do cardápio"
+    ON storage.objects FOR DELETE
+    USING (bucket_id = 'menu-images');
